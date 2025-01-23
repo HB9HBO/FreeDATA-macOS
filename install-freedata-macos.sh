@@ -94,7 +94,7 @@ esac
 
 osname=`sw_vers -productName`
 osversion=`sw_vers -productVersion`
-oshelper=`port version | cut -d" " -f2`
+oshelper=`port version | cut -d" " -f2 | awk -F. '{print $1 "." $2}'`
 
 echo "Running on" $osname "version" $osversion with $oshelper
 
@@ -115,7 +115,7 @@ echo "*************************************************************************"
 case $osname in
 	"macOS")
 		case $oshelper in
-			"2.10.5")
+			"2.10")
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
 				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
@@ -381,3 +381,4 @@ npm run build
 cd ../..
 
 
+            

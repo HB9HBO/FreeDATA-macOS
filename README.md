@@ -1,8 +1,9 @@
 ## FreeDATA Scripts for Mac OSX
 
 ### Preface
-The installation requires an already working MacPorts installation, please follow the instrutions on https://www.macports.org/install.php.
-The developer installation is not tested yet.
+The installation requires an already working MacPorts v2.10.x on your Mac, please follow the instrutions on https://www.macports.org/install.php.
+The FreeDATA developer installation is not tested yet.
+The scripts run on Apple Silicon. No testing on Intel Mac, but should work also.
 
 
 #### Short MacPorts install description
