@@ -32,7 +32,7 @@ As usual, open the Terminal and execute the following commands:
 $ cd ~/freedata
 $ bash run-freedata-macos.sh
 ```
-Your browser should open the FreeDATA webinterface. For configuring FreeDATA, follow the instructions unter https://wiki.freedata.app.
+Your browser should open the FreeDATA webinterface. For configuring FreeDATA, follow the instructions under https://wiki.freedata.app.
 
 
 
