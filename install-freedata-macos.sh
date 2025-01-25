@@ -16,11 +16,9 @@
 # FreeDATA-venv: Contains the Python virtual environment
 # FreeDATA-hamlib: Contains the hamlib libraries
 #
-# FreeDATA config file is stored in $HOME/Library/Applicatio Support/FreeDATA/config.ini
+# FreeDATA config file is stored in $HOME/Library/Application Support/FreeDATA/config.ini
 # See the run-freedata-macos.sh for more details
 #
-#
-# this version supports only macports
 #
 #
 # Changelog:
@@ -91,7 +89,7 @@ esac
 
 #///////////////////////////////////////////////////////////////////////////////
 #	
-#	Changed for macOS
+#	Changes for macOS
 #
 #///////////////////////////////////////////////////////////////////////////////
 
@@ -143,6 +141,9 @@ case $osname in
 	"macOS")
 		case $pkgmgr in
 			"macports")
+				## Fix versions, this will change in the future and break the installation
+				## maybe other case for different versions of hombrew
+				## is wheel and colorama needed?
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
 				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
