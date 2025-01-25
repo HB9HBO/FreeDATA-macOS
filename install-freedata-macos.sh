@@ -22,10 +22,14 @@
 #
 #
 # Changelog:
-# 2.2:	24 Jan 2024 (hb9hbo)
+# 2.3:	25 Jan 2025
+#	Installation does not depend on python from brew or macports
+#   brew or macports are still required for 
+#
+# 2.2:	24 Jan 2025 (hb9hbo)
 #	install with brew and macports
 #
-# 2.1:	23 Jan 2024 (hb9hbo)
+# 2.1:	23 Jan 2025 (hb9hbo)
 #	Initial macOS version
 #
 # 2.0:	04 Oct 2024 (deej)
@@ -93,6 +97,7 @@ esac
 #
 #///////////////////////////////////////////////////////////////////////////////
 
+fddir=`pwd`
 osname=`sw_vers -productName`
 osversion=`sw_vers -productVersion`
 pkgmgr=''
@@ -146,14 +151,13 @@ case $osname in
 				## is wheel and colorama needed?
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
-				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
-				sudo port select --set python3 python310
+				sudo port -N install wget cmake nvm nodejs22 npm10
 				;;
 
 			"homebrew")
 				echo "Installing FreeDATA on top of homebrew"
 				brew update
-				brew install wget cmake portaudio python libusb pyenv-virtualenv nvm node@22 npm
+				brew install wget cmake nvm node@22 npm
 				export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 				;;
 
@@ -235,15 +239,16 @@ then
 
 		#///////////////////////////////////////////////////////////////////////////////
 		#
-		# make shure the USB Libraries and includes where found
+		# seems libusb isn't even needed
 		#
 		#///////////////////////////////////////////////////////////////////////////////
 
-		./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include -I/opt/local/include/libusb-1.0" LDFLAGS="-L/opt/local/lib/"
+		./configure --prefix=$curdir/FreeDATA-hamlib --without-libusb --enable-static=yes --enable-shared=no 
 
 		make -j $ncpu
 		make install
 		cd ..
+
 	else
 		echo "Something went wrong.  hamlib-4.5.5 directory not found."
 		exit 1
@@ -296,6 +301,30 @@ else
 	exit 1
 fi
 
+
+if [ ! -d "FreeDATA-portaudio" ];
+then
+	echo "Building portaudio"
+	curdir=`pwd`
+	git clone https://github.com/PortAudio/portaudio.git
+	cd portaudio
+	./configure --prefix=$curdir/FreeDATA-portaudio
+	make -j $ncpu
+	make install
+	cd ..
+	cp -a portaudio/include/* FreeDATA-portaudio/include
+
+	if [ ! -f "FreeDATA-portaudio/lib/libportaudio.2.dylib" ];
+	then
+		echo "Something went wrong." $curdir"/FreeDATA-venv/lib/libportaudio.2.dylib not found"
+		exit 1
+	else
+		echo "Cleaning up files from portaudio build."
+		rm -rf portaudio
+	fi
+fi
+
+
 echo "*************************************************************************"
 echo "Updating pip and wheel"
 echo "*************************************************************************"
@@ -330,24 +359,19 @@ else
 	exit 1
 fi
 
+
+
 echo "*************************************************************************"
 echo "Installing required Python programs into the virtual environment"
 echo "*************************************************************************"
 
-
-
 #///////////////////////////////////////////////////////////////////////////////
-#	
-#	PyAudio already installed exclude it from install
+#
+# changed for macos, compiler and linker flags for building PyAudio
 #
 #///////////////////////////////////////////////////////////////////////////////
 
-if [ $pkgmgr == "macports" ];
-then
-	sed -i "" -e 's/PyAudio/#PyAudio/' requirements.txt
-fi
-
-pip install --upgrade -r requirements.txt
+CFLAGS="-I$fddir/portaudio/include" LDFLAGS="-L$fddir/FreeDATA-portaudio/lib" pip install --upgrade -r requirements.txt
 
 
 echo "*************************************************************************"
