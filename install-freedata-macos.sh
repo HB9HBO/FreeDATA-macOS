@@ -22,6 +22,9 @@
 #
 #
 # Changelog:
+# 2.3:  26 Jan 2025 (vk1kcm)
+#   Clean up macports install
+#
 # 2.2:	24 Jan 2024 (hb9hbo)
 #	install with brew and macports
 #
@@ -146,8 +149,9 @@ case $osname in
 				## is wheel and colorama needed?
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
-				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
-				sudo port select --set python3 python310
+				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb nvm nodejs22 npm10 py310-wheel py310-pip git
+				export PYTHONBIN="python3.10"
+				export PIPBIN="pip"
 				;;
 
 			"homebrew")
@@ -155,6 +159,9 @@ case $osname in
 				brew update
 				brew install wget cmake portaudio python libusb pyenv-virtualenv nvm node@22 npm
 				export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+				export PYTHONBIN="python3"
+				export PIPBIN="pip"
+
 				;;
 
 			*)
@@ -188,8 +195,6 @@ if [ $ncpu -lt 1 ];
 then
 	ncpu=1
 fi
-
-
 
 echo "*************************************************************************"
 echo "Checking for hamlib 4.5.5 in FreeDATA-hamlib"
@@ -259,7 +264,6 @@ then
         fi
 fi
 
-
 echo "*************************************************************************"
 echo "Checking for old FreeDATA directories"
 echo "*************************************************************************"
@@ -283,7 +287,7 @@ fi
 echo "*************************************************************************"
 echo "Creating Python Virtual Environment FreeDATA-venv"
 echo "*************************************************************************"
-python3 -m venv FreeDATA-venv
+$PYTHONBIN -m venv FreeDATA-venv
 
 echo "*************************************************************************"
 echo "Activating the Python Virtual Environment"
@@ -299,7 +303,7 @@ fi
 echo "*************************************************************************"
 echo "Updating pip and wheel"
 echo "*************************************************************************"
-pip install --upgrade pip wheel
+$PIPBIN install --upgrade pip wheel
 
 echo "*************************************************************************"
 echo "Downloading the FreeDATA software from the git repo"
@@ -347,7 +351,7 @@ then
 	sed -i "" -e 's/PyAudio/#PyAudio/' requirements.txt
 fi
 
-pip install --upgrade -r requirements.txt
+$PIPBIN install --upgrade -r requirements.txt
 
 
 echo "*************************************************************************"

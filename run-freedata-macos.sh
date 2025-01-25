@@ -19,6 +19,8 @@
 # We expect the config.ini file to be at $HOME/.config/FreeDATA/config.ini
 # If it isn't found, we copy config.ini.example there
 #
+# 1.9:  26 Jan 2025 (VK1KCM)
+#   Modified for macos and macports, including HB9HBO changes
 # 1.8:  22 May 2024 (DJ2LS)
 #	add support for browser based gui
 # 1.7:  22 May 2024
@@ -110,7 +112,7 @@ fi
 #	Config and DB-File macOS like
 #
 
-FREEDATA_CONFIG=$HOME/Library/Application\ Support/FreeDATA/config.ini FREEDATA_DATABASE=$HOME/Library/Application\ Support/FreeDATA/freedata-messages.db python3 $serverdir/server.py > FreeDATA-server.log 2>&1 &
+FREEDATA_CONFIG=$HOME/Library/Application\ Support/FreeDATA/config.ini FREEDATA_DATABASE=$HOME/Library/Application\ Support/FreeDATA/freedata-messages.db python3.10 $serverdir/server.py > FreeDATA-server.log 2>&1 &
 serverpid=$!
 echo "Process ID of FreeDATA server is" $serverpid
 
