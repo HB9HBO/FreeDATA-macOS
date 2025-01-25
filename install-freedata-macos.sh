@@ -22,6 +22,9 @@
 #
 #
 # Changelog:
+# 2.3:  26 Jan 2025 (vk1kcm)
+#   Clean up macports install
+#
 # 2.2:	24 Jan 2024 (hb9hbo)
 #	install with brew and macports
 #
@@ -146,8 +149,9 @@ case $osname in
 				## is wheel and colorama needed?
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
-				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
-				sudo port select --set python3 python310
+				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb nvm nodejs22 npm10 py310-wheel py310-pip git
+				export PYTHONBIN="python3.10"
+				export PIPBIN="pip"
 				;;
 
 			"homebrew")
@@ -155,6 +159,9 @@ case $osname in
 				brew update
 				brew install wget cmake portaudio python libusb pyenv-virtualenv nvm node@22 npm
 				export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+				export PYTHONBIN="python3"
+				export PIPBIN="pip"
+
 				;;
 
 			*)
@@ -189,77 +196,6 @@ then
 	ncpu=1
 fi
 
-
-
-echo "*************************************************************************"
-echo "Checking for hamlib 4.5.5 in FreeDATA-hamlib"
-echo "*************************************************************************"
-
-if [ -d "FreeDATA-hamlib.old" ];
-then
-	rm -rf FreeDATA-hamlib.old
-fi
-
-if [ -d "FreeDATA-hamlib" ];
-then
-	if [ -f "./FreeDATA-hamlib/bin/rigctl" ];
-	then
-		checkhamlibver=`./FreeDATA-hamlib/bin/rigctl --version | cut -f3 -d" "`
-		if [ "$checkhamlibver" != "4.5.5" ];
-		then
-			mv FreeDATA-hamlib FreeDATA-hamlib.old
-		else
-			echo "Hamlib 4.5.5 found, no installation needed."
-		fi
-	else
-		mv FreeDATA-hamlib FreeDATA-hamlib.old
-	fi
-fi
-
-if [ ! -d "FreeDATA-hamlib" ];
-then
-	echo "Installing hamlib 4.5.5 into FreeDATA-hamlib"
-	curdir=`pwd`
-	wget https://github.com/Hamlib/Hamlib/releases/download/4.5.5/hamlib-4.5.5.tar.gz
-	if [ -f "hamlib-4.5.5.tar.gz" ];
-	then
-		tar -xf hamlib-4.5.5.tar.gz
-	else
-		echo "Something went wrong.  hamlib-4.5.5.tar.gz not downloaded."
-		exit 1
-	fi
-	if [ -d "hamlib-4.5.5" ];
-	then
-		cd hamlib-4.5.5
-
-
-		#///////////////////////////////////////////////////////////////////////////////
-		#
-		# make shure the USB Libraries and includes where found
-		#
-		#///////////////////////////////////////////////////////////////////////////////
-
-		./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include -I/opt/local/include/libusb-1.0" LDFLAGS="-L/opt/local/lib/"
-
-		make -j $ncpu
-		make install
-		cd ..
-	else
-		echo "Something went wrong.  hamlib-4.5.5 directory not found."
-		exit 1
-	fi
-	if [ ! -f "$curdir/FreeDATA-hamlib/bin/rigctl" ];
-	then
-		echo "Something went wrong." $curdir"/FreeDATA.hamlib/bin/rigctl not found."
-                exit 1
-	else
-		echo "Cleaning up files from hamlib build."
-		rm -f hamlib-4.5.5.tar.gz
-		rm -rf hamlib-4.5.5
-        fi
-fi
-
-
 echo "*************************************************************************"
 echo "Checking for old FreeDATA directories"
 echo "*************************************************************************"
@@ -283,7 +219,7 @@ fi
 echo "*************************************************************************"
 echo "Creating Python Virtual Environment FreeDATA-venv"
 echo "*************************************************************************"
-python3 -m venv FreeDATA-venv
+$PYTHONBIN -m venv FreeDATA-venv
 
 echo "*************************************************************************"
 echo "Activating the Python Virtual Environment"
@@ -299,7 +235,7 @@ fi
 echo "*************************************************************************"
 echo "Updating pip and wheel"
 echo "*************************************************************************"
-pip install --upgrade pip wheel
+$PIPBIN install --upgrade pip wheel
 
 echo "*************************************************************************"
 echo "Downloading the FreeDATA software from the git repo"
@@ -347,7 +283,7 @@ then
 	sed -i "" -e 's/PyAudio/#PyAudio/' requirements.txt
 fi
 
-pip install --upgrade -r requirements.txt
+$PIPBIN install --upgrade -r requirements.txt
 
 
 echo "*************************************************************************"
