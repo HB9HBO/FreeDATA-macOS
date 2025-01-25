@@ -146,9 +146,6 @@ case $osname in
 	"macOS")
 		case $pkgmgr in
 			"macports")
-				## Fix versions, this will change in the future and break the installation
-				## maybe other case for different versions of hombrew
-				## is wheel and colorama needed?
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
 				sudo port -N install wget cmake nvm nodejs22 npm10
