@@ -24,7 +24,10 @@
 #
 #
 # Changelog:
-# 2.1:	23 Jan 2024 hb9hbo
+# 2.2:	24 Jan 2024 (hb9hbo)
+#	install with brew and macports
+#
+# 2.1:	23 Jan 2024 (hb9hbo)
 #	Initial macOS version
 #
 # 2.0:	04 Oct 2024 (deej)
@@ -94,10 +97,34 @@ esac
 
 osname=`sw_vers -productName`
 osversion=`sw_vers -productVersion`
-oshelper=`port version | cut -d" " -f2 | awk -F. '{print $1 "." $2}'`
+pkgmgr=''
 
-echo "Running on" $osname "version" $osversion with $oshelper
+port=`which port`
+brew=`which brew`
 
+if [[ -x $port && -x $brew ]];
+then
+	echo "MacPorts and homebrew installed!"
+	echo "installer not ready for this constellation"
+	exit 1
+fi
+
+
+if [[ -e $port  ]];
+then
+	pkgmgr='macports'
+	pkgmgrversion=`port version | cut -d" " -f2 | awk -F. '{print $1 "." $2}'`
+elif [[ -e $brew ]];
+then
+	pkgmgr='homebrew'
+else
+	echo "Neither MacPorts nor homebrew installed"
+	echo "please install one!"
+	exit 1
+fi
+
+
+echo "Running on $osname version $osversion with $pkgmgr"
 
 
 echo "*************************************************************************"
@@ -114,26 +141,25 @@ echo "*************************************************************************"
 
 case $osname in
 	"macOS")
-		case $oshelper in
-			"2.10")
+		case $pkgmgr in
+			"macports")
 				echo "Installing FreeDATA on top of MacPorts"
 				sudo port selfupdate
 				sudo port -N install wget cmake portaudio python310 py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel
 				sudo port select --set python3 python310
 				;;
 
-			"brew")
-				echo "brew variant not ready...."
-				exit 1
+			"homebrew")
+				echo "Installing FreeDATA on top of homebrew"
+				brew update
+				brew install wget cmake portaudio python libusb pyenv-virtualenv nvm node@22 npm
+				export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 				;;
 
 			*)
 				echo "*************************************************************************"
-				echo $osname $osversion $oshelper
-				echo "This installation is not compatible, please install macports."
-				echo "% xcode-select --install"
-				echo "Download required version for you macOS from:"
-				echo "https://www.macports.org/install.php"
+				echo "$osname $osversion $pkgmgr"
+				echo "This installation is not compatible, please install macports or homebrew"
 				echo "*************************************************************************"
 				exit 1
 		   		;;
@@ -315,7 +341,11 @@ echo "*************************************************************************"
 #
 #///////////////////////////////////////////////////////////////////////////////
 
-sed -i "" -e 's/PyAudio/#PyAudio/' requirements.txt
+if [ $pkgmgr == "macports" ];
+then
+	sed -i "" -e 's/PyAudio/#PyAudio/' requirements.txt
+fi
+
 pip install --upgrade -r requirements.txt
 
 
@@ -373,12 +403,8 @@ echo "*************************************************************************"
 cd ../../../..
 cd freedata_gui
 npm i
-#npm audit fix --force
-#npm i
 npm run build
 
 # Return to the directory we started in
 cd ../..
 
-
-            
