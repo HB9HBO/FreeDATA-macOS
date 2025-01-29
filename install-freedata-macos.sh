@@ -22,9 +22,11 @@
 #
 #
 # Changelog:
-# 2.3:	25 Jan 2025
-#	Installation does not depend on python from brew or macports
-#   brew or macports are still required for 
+# 2.4:	29 Jan 2025 (hb9hbo)
+#	OS version handling and further macports refinement
+#
+# 2.3:  26 Jan 2025 (vk1kcm)
+#	clean up macport install
 #
 # 2.2:	24 Jan 2025 (hb9hbo)
 #	install with brew and macports
@@ -92,32 +94,34 @@ esac
 
 
 #///////////////////////////////////////////////////////////////////////////////
-#	
-#	Changes for macOS
-#
-#///////////////////////////////////////////////////////////////////////////////
-
-fddir=`pwd`
+# find macos and version	
+# 
 osname=`sw_vers -productName`
-osversion=`sw_vers -productVersion`
+osversion=`sw_vers -productVersion | cut -d"." -f1`
 pkgmgr=''
 
+
+
+#////////////////////////////////////////////////////////////////////////////////
+# find installed additional Package Manager
+#	
 port=`which port`
 brew=`which brew`
 
 if [[ -x $port && -x $brew ]];
 then
 	echo "MacPorts and homebrew installed!"
-	echo "installer not ready for this constellation"
-	exit 1
+	echo "selecting MacPorts for installation"
+	pkgmgr='macports'
+	brew=''
 fi
 
 
-if [[ -e $port  ]];
+if [[ -x $port  ]];
 then
 	pkgmgr='macports'
 	pkgmgrversion=`port version | cut -d" " -f2 | awk -F. '{print $1 "." $2}'`
-elif [[ -e $brew ]];
+elif [[ -x $brew ]];
 then
 	pkgmgr='homebrew'
 else
@@ -136,45 +140,125 @@ echo "If prompted, enter your password to run the sudo command"
 echo "*************************************************************************"
 
 
-#///////////////////////////////////////////////////////////////////////////////
-#	
-#	Changed for macOS
-#
-#///////////////////////////////////////////////////////////////////////////////
+
+#////////////////////////////////////////////////////////////////////////////////
+# Variables for MacPorts install
+	
+#mp_pkgs="wget cmake portaudio py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel"
+mp_pkgs="wget cmake portaudio py310-virtualenv nvm nodejs22 npm10"
+mp_pkg_python="python310"
+mp_pkg_pip="py-pip"
+mp_path_python="/opt/local/bin/python3"
+mp_path_pip="/opt/local/bin/pip3"
+mp_path='/opt/local/bin'
+mp_select_python=0
+mp_select_pip=0
 
 case $osname in
 	"macOS")
-		case $pkgmgr in
-			"macports")
-				echo "Installing FreeDATA on top of MacPorts"
-				sudo port selfupdate
-				sudo port -N install wget cmake nvm nodejs22 npm10
-				;;
+	case $osversion in
+		"14" | "15")
+			case $pkgmgr in
+				"macports")
 
-			"homebrew")
-				echo "Installing FreeDATA on top of homebrew"
-				brew update
-				brew install wget cmake nvm node@22 npm
-				export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
-				;;
+					echo "Installing FreeDATA on top of MacPorts"
+					sudo port selfupdate
 
-			*)
-				echo "*************************************************************************"
-				echo "$osname $osversion $pkgmgr"
-				echo "This installation is not compatible, please install macports or homebrew"
-				echo "*************************************************************************"
-				exit 1
-		   		;;
-		esac
-		;;
+
+					#////////////////////////////////////////////////////////////////////////////////
+					# Check for working python3 in macports
+	
+					if [ ! -f "$mp_path_python" ] && [ ! -x "$mp_path_python" ];
+					then
+						echo "Python3 not installed, add $mp_pkg_python"
+						mp_pkgs="$mc_pkg_python $mc_pkgs"
+						mp_select_python=1
+					fi
+	
+	
+					#////////////////////////////////////////////////////////////////////////////////
+					# Check for working pip in macports
+					#
+					if [ ! -f "$mp_path_pip" ] && [ ! -x "$mp_path_pip" ];
+					then
+						echo "Python pip not installed, add py-pip"
+						mp_pkgs="py-pip $mp_pkgs"
+						mp_select_pip=1
+					fi
+	
+	
+	
+					#////////////////////////////////////////////////////////////////////////////////
+					# install required packages
+					#
+					echo "Installing required Packages:"			
+					echo "sudo port -N install $mp_pkgs"
+					sudo port -N install $mp_pkgs
+	
+	
+					#////////////////////////////////////////////////////////////////////////////////
+					# select python3.10 and/or pip313 as the default version
+					#
+					if [ "$mp_select_python" -eq 1 ];
+					then
+						echo "Selecting python3.10"
+						sudo port select --set python3 python310
+					fi
+	
+					if [ "$mp_select_pip" -eq 1 ];
+					then
+						echo "Selecting pip313"
+						sudo port select --set pip3 pip313
+					fi
+	
+					#////////////////////////////////////////////////////////////////////////////////
+					# adding macports Path to $PATH
+					#
+					if [[ ! $PATH =~ "$mp_path" ]];
+					then
+						echo "Adding $mp_path to \$PATH"
+						#export PATH="$mc_path":$PATH
+					fi
+					;;
+	
+				"homebrew")
+					echo "Installing FreeDATA on top of homebrew"
+					brew update
+					brew install wget cmake portaudio python pyenv-virtualenv nvm node@22 npm
+					export PATH="/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:$PATH"
+					;;
+	
+				*)
+					echo "*************************************************************************"
+					echo "$osname $osversion $pkgmgr"
+					echo "This installation is not compatible, please install macports or homebrew"
+					echo "*************************************************************************"
+					exit 1
+			   		;;
+			esac
+			;;
+
+		*)
+			echo "*************************************************************************"
+			echo "This version of MacOS is not yet supported by this script."
+			echo $osname $osversion
+			echo "*************************************************************************"
+			exit 1
+			;;
+	esac
+	;;
+
 	*)
 		echo "*************************************************************************"
-		echo "This version of MacOS is not yet supported by this script."
+		echo "This Operating System is not supported"
 		echo $osname $osversion
 		echo "*************************************************************************"
 		exit 1
 		;;
+
 esac
+
+
 
 
 #///////////////////////////////////////////////////////////////////////////////
@@ -189,6 +273,9 @@ if [ $ncpu -lt 1 ];
 then
 	ncpu=1
 fi
+
+
+
 
 
 
@@ -236,16 +323,16 @@ then
 
 		#///////////////////////////////////////////////////////////////////////////////
 		#
-		# seems libusb isn't even needed
+		# make sure the Libraries and Includes where found, no need for libusb
 		#
 		#///////////////////////////////////////////////////////////////////////////////
 
-		./configure --prefix=$curdir/FreeDATA-hamlib --without-libusb --enable-static=yes --enable-shared=no 
+		#./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include -I/opt/local/include/libusb-1.0" LDFLAGS="-L/opt/local/lib/"
+		./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib/" --without-libusb
 
 		make -j $ncpu
 		make install
 		cd ..
-
 	else
 		echo "Something went wrong.  hamlib-4.5.5 directory not found."
 		exit 1
@@ -298,34 +385,10 @@ else
 	exit 1
 fi
 
-
-if [ ! -d "FreeDATA-portaudio" ];
-then
-	echo "Building portaudio"
-	curdir=`pwd`
-	git clone https://github.com/PortAudio/portaudio.git
-	cd portaudio
-	./configure --prefix=$curdir/FreeDATA-portaudio
-	make -j $ncpu
-	make install
-	cd ..
-	cp -a portaudio/include/* FreeDATA-portaudio/include
-
-	if [ ! -f "FreeDATA-portaudio/lib/libportaudio.2.dylib" ];
-	then
-		echo "Something went wrong." $curdir"/FreeDATA-venv/lib/libportaudio.2.dylib not found"
-		exit 1
-	else
-		echo "Cleaning up files from portaudio build."
-		rm -rf portaudio
-	fi
-fi
-
-
 echo "*************************************************************************"
 echo "Updating pip and wheel"
 echo "*************************************************************************"
-pip install --upgrade pip wheel
+pip3 install --upgrade pip wheel
 
 echo "*************************************************************************"
 echo "Downloading the FreeDATA software from the git repo"
@@ -356,19 +419,25 @@ else
 	exit 1
 fi
 
-
-
 echo "*************************************************************************"
 echo "Installing required Python programs into the virtual environment"
 echo "*************************************************************************"
 
-#///////////////////////////////////////////////////////////////////////////////
-#
-# changed for macos, compiler and linker flags for building PyAudio
-#
-#///////////////////////////////////////////////////////////////////////////////
 
-CFLAGS="-I$fddir/portaudio/include" LDFLAGS="-L$fddir/FreeDATA-portaudio/lib" pip install --upgrade -r requirements.txt
+
+#///////////////////////////////////////////////////////////////////////////////
+# Compiler can't find the Includes and Libraries
+#	
+if [ $pkgmgr == "macports" ];
+then
+	CFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib" pip3 install --upgrade -r requirements.txt
+fi
+if [ $pkgmgr == "homebrew" ];
+then
+	CFLAGS="-I/opt/homebrew/include" LDFLAGS="-L/opt/homebrew/lib" pip3 install --upgrade -r requirements.txt
+fi
+
+
 
 
 echo "*************************************************************************"

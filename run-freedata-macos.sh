@@ -19,6 +19,8 @@
 # We expect the config.ini file to be at $HOME/.config/FreeDATA/config.ini
 # If it isn't found, we copy config.ini.example there
 #
+# 1.9:	29.Jan 2025 (HB9HBO)
+#	MacOS version 
 # 1.8:  22 May 2024 (DJ2LS)
 #	add support for browser based gui
 # 1.7:  22 May 2024
@@ -36,6 +38,23 @@
 # 1.1:  26 Apr 2024
 # 1.0:	25 Apr 2024 Initial release
 #
+
+
+#///////////////////////////////////////////////////////////////
+# verify installation of a pakage manager
+
+port=`which port`
+brew=`which brew`
+
+if [ ! -x "$port" ] && [ ! -x "$brew" ];
+then
+	echo "Macports or Homebrew not found in PATH!"
+	echo "Maybe you forgot adding the search path to your .bashrc or .zprofile?"
+	echo "Or try a logout/login, so the ENV Variables would setup correctly "
+	exit 1
+fi
+
+
 
 # Set path to find our hamlib install
 export PATH=./FreeDATA-hamlib/bin:$PATH
@@ -84,7 +103,7 @@ fi
 #////////////////////////////////////////////////////////////////
 #	Changes for macOS
 #	Put the config and DB-file on a macOS like location
-
+#
 if [ ! -d $HOME/Library/Application\ Support/FreeDATA ];
 then
 	mkdir -p $HOME/Library/Application\ Support/FreeDATA
@@ -98,6 +117,7 @@ then
 
 	cp $serverdir/config.ini.example $HOME/Library/Application\ Support/FreeDATA/config.ini
 
+
 	#////////////////////////////////////////////////////////////////
 	# Change the Server Port, macOS uses TCP 5000 for AirPlay
 	#
@@ -109,7 +129,6 @@ fi
 #////////////////////////////////////////////////////////////////
 #	Config and DB-File macOS like
 #
-
 FREEDATA_CONFIG=$HOME/Library/Application\ Support/FreeDATA/config.ini FREEDATA_DATABASE=$HOME/Library/Application\ Support/FreeDATA/freedata-messages.db python3 $serverdir/server.py > FreeDATA-server.log 2>&1 &
 serverpid=$!
 echo "Process ID of FreeDATA server is" $serverpid
