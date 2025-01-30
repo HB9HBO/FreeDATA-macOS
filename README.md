@@ -1,8 +1,8 @@
-## FreeDATA Scripts for Mac OSX
+## FreeDATA Scripts for Apple macOS
 
 ### Preface
 The installation requires an already working MacPorts or Homebrew installation on your Mac, please follow the corresponding instrutions on https://www.macports.org/install.php or https://brew.sh\
-The scripts run on Apple Silicon. I had it not tested on Intel Mac.\
+The scripts run on Apple Silicon. It's not tested on Intel Macs.\
 I include two short instruction how to install MacPorts or Homebrew. Please install only one of them!\
 
 
@@ -13,6 +13,7 @@ Open the Terminal, you find it in the Utilities Folder inside the Applications F
 % xcode-select --install
 ```
 Download the required MacPorts version from the link above and install it as usual. (Double click the pkg and follow the instructions) 
+If you have the Terminal open, please close it completely [command+q] to make shure that the MacPorts environment is loaded.
 
 
 #### Short Homebrew installation instructions
@@ -25,7 +26,7 @@ This will take some time, depending on the speed of your mac and internet connec
 ```
 % /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-brew tells you at the end of the installation, to execute some commands. please don't forget them. After that restart your computer.
+brew tells you at the end of the installation, to execute some commands. please don't forget them. Close the Terminal completely [command+q]\
 
 
 

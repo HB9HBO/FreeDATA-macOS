@@ -98,8 +98,6 @@ esac
 # 
 osname=`sw_vers -productName`
 osversion=`sw_vers -productVersion | cut -d"." -f1`
-pkgmgr=''
-
 
 
 #////////////////////////////////////////////////////////////////////////////////
@@ -143,16 +141,20 @@ echo "*************************************************************************"
 
 #////////////////////////////////////////////////////////////////////////////////
 # Variables for MacPorts install
-	
-#mp_pkgs="wget cmake portaudio py310-pyaudio py310-colorama py310-virtualenv libusb-devel nvm nodejs22 npm10 py310-wheel"
-mp_pkgs="wget cmake portaudio py310-virtualenv nvm nodejs22 npm10"
-mp_pkg_python="python310"
-mp_pkg_pip="py-pip"
-mp_path_python="/opt/local/bin/python3"
-mp_path_pip="/opt/local/bin/pip3"
-mp_path='/opt/local/bin'
+# we don't want break an already installed and working python3
+#
+mp_pkgs="wget cmake portaudio nvm nodejs22 npm10"
+mp_path="/opt/local/bin"
+mp_py_version="313"
+mp_pkg_python="python$mp_py_version"
+mp_pkg_pip="py$mp_py_version-pip"
+mp_pkg_virtualenv="py$mp_py_version-virtualenv"
+mp_path_python="$mp_path/python3"
+mp_path_pip="$mp_path/pip3"
+mp_path_virtualenv="$mp_path/virtualenv"
 mp_select_python=0
 mp_select_pip=0
+mp_select_virtualenv=0
 
 case $osname in
 	"macOS")
@@ -161,17 +163,20 @@ case $osname in
 			case $pkgmgr in
 				"macports")
 
+					#////////////////////////////////////////////////////////////////////////////////
+					# update the MacPorts package cache
+					#
 					echo "Installing FreeDATA on top of MacPorts"
 					sudo port selfupdate
 
 
 					#////////////////////////////////////////////////////////////////////////////////
 					# Check for working python3 in macports
-	
+					#
 					if [ ! -f "$mp_path_python" ] && [ ! -x "$mp_path_python" ];
 					then
 						echo "Python3 not installed, add $mp_pkg_python"
-						mp_pkgs="$mc_pkg_python $mc_pkgs"
+						mp_pkgs="$mp_pkg_python $mp_pkgs"
 						mp_select_python=1
 					fi
 	
@@ -181,47 +186,62 @@ case $osname in
 					#
 					if [ ! -f "$mp_path_pip" ] && [ ! -x "$mp_path_pip" ];
 					then
-						echo "Python pip not installed, add py-pip"
-						mp_pkgs="py-pip $mp_pkgs"
+						echo "Python pip not installed, add $mp_pkg_pip"
+						mp_pkgs="$mp_pkg_pip $mp_pkgs"
 						mp_select_pip=1
 					fi
 	
+
+					#////////////////////////////////////////////////////////////////////////////////
+					# Check for installed virtualenv  in macports
+					#
+					if [ ! -f "$mp_path_virtualenv" ] && [ ! -x "$mp_path_virtualenv" ];
+					then
+						echo "Python pip not installed, add $mp_pkg_virtualenv"
+						mp_pkgs="$mp_pkg_virtualenv $mp_pkgs"
+						mp_select_virtualenv=1
+					fi
 	
 	
 					#////////////////////////////////////////////////////////////////////////////////
 					# install required packages
 					#
-					echo "Installing required Packages:"			
-					echo "sudo port -N install $mp_pkgs"
+					echo "Installing required Packages."			
 					sudo port -N install $mp_pkgs
 	
 	
 					#////////////////////////////////////////////////////////////////////////////////
-					# select python3.10 and/or pip313 as the default version
+					# select python3.10 and/or pip313 as the default version, if not installed
 					#
 					if [ "$mp_select_python" -eq 1 ];
 					then
-						echo "Selecting python3.10"
-						sudo port select --set python3 python310
+						echo "Selecting $mp_pkg_python"
+						sudo port select --set python3 "python$mp_py_version"
 					fi
-	
 					if [ "$mp_select_pip" -eq 1 ];
 					then
-						echo "Selecting pip313"
-						sudo port select --set pip3 pip313
+						echo "Selecting $mp_pkg_pip"
+						sudo port select --set pip3 "pip$mp_py_version"
 					fi
-	
+					if [ "$mp_select_virtualenv" -eq 1 ];
+					then
+						echo "Selecting $mp_pkg_virtualenv"
+						sudo port select --set virtualenv "virtualenv$mp_py_version"
+					fi
+
 					#////////////////////////////////////////////////////////////////////////////////
 					# adding macports Path to $PATH
 					#
 					if [[ ! $PATH =~ "$mp_path" ]];
 					then
 						echo "Adding $mp_path to \$PATH"
-						#export PATH="$mc_path":$PATH
+						export PATH="$mp_path":$PATH
 					fi
 					;;
 	
 				"homebrew")
+					#/////////////////////////////////////////////////////////////////////////
+					# more testing needed
 					echo "Installing FreeDATA on top of homebrew"
 					brew update
 					brew install wget cmake portaudio python pyenv-virtualenv nvm node@22 npm
@@ -260,22 +280,15 @@ esac
 
 
 
-
 #///////////////////////////////////////////////////////////////////////////////
-#	
-#	find No CPU's and use half of them for compiling (make -j $ncpu)
+# find No CPU's and use half of them for compiling (make -j $ncpu)
 #
-#///////////////////////////////////////////////////////////////////////////////
-
 ncpu=`sysctl hw.ncpu | awk '{print $2}'`
 ncpu=$(($ncpu / 2))
 if [ $ncpu -lt 1 ];
 then
 	ncpu=1
 fi
-
-
-
 
 
 
@@ -322,14 +335,9 @@ then
 
 
 		#///////////////////////////////////////////////////////////////////////////////
-		#
 		# make sure the Libraries and Includes where found, no need for libusb
 		#
-		#///////////////////////////////////////////////////////////////////////////////
-
-		#./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include -I/opt/local/include/libusb-1.0" LDFLAGS="-L/opt/local/lib/"
 		./configure --prefix=$curdir/FreeDATA-hamlib CPPFLAGS="-I/opt/local/include" LDFLAGS="-L/opt/local/lib/" --without-libusb
-
 		make -j $ncpu
 		make install
 		cd ..
@@ -404,9 +412,9 @@ then
     git clone https://github.com/DJ2LS/FreeDATA.git -b $args
 else
     echo "Downloading regular version"
-  git clone https://github.com/DJ2LS/FreeDATA.git
-
+	git clone https://github.com/DJ2LS/FreeDATA.git
 fi
+
 
 echo "*************************************************************************"
 echo "Changing Directory into FreeDATA"
@@ -419,11 +427,10 @@ else
 	exit 1
 fi
 
+
 echo "*************************************************************************"
 echo "Installing required Python programs into the virtual environment"
 echo "*************************************************************************"
-
-
 
 #///////////////////////////////////////////////////////////////////////////////
 # Compiler can't find the Includes and Libraries
@@ -436,8 +443,6 @@ if [ $pkgmgr == "homebrew" ];
 then
 	CFLAGS="-I/opt/homebrew/include" LDFLAGS="-L/opt/homebrew/lib" pip3 install --upgrade -r requirements.txt
 fi
-
-
 
 
 echo "*************************************************************************"
@@ -458,6 +463,7 @@ echo "*************************************************************************"
 echo "Downloading the latest codec library"
 echo "*************************************************************************"
 git clone https://github.com/drowe67/codec2.git
+
 
 echo "*************************************************************************"
 echo "Changing into the codec2 library directory"
@@ -499,3 +505,8 @@ npm run build
 # Return to the directory we started in
 cd ../..
 
+echo ""
+echo "*************************************************************************"
+echo "FreeDATA is installed, run with 'bash run-freedata-macos.sh'"
+echo "*************************************************************************"
+echo ""
