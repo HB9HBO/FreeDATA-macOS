@@ -19,6 +19,8 @@
 # We expect the config.ini file to be at $HOME/.config/FreeDATA/config.ini
 # If it isn't found, we copy config.ini.example there
 #
+# 2.0:	30 Jan 2025 (HB9HBO)
+#	checks if MacPorts or brew is installed
 # 1.9:	29.Jan 2025 (HB9HBO)
 #	MacOS version 
 # 1.8:  22 May 2024 (DJ2LS)

@@ -41,6 +41,7 @@ Open the Terminal and execute the following commands:
 % bash install-freedata-macos.sh
 ```
 
+
 ### Run FreeDATA
 As usual, open the Terminal and execute the following commands:
 ```

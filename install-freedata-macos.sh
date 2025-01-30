@@ -114,7 +114,6 @@ then
 	brew=''
 fi
 
-
 if [[ -x $port  ]];
 then
 	pkgmgr='macports'
