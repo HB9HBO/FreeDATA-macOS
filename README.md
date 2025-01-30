@@ -1,7 +1,7 @@
 ## FreeDATA Scripts for Apple macOS
 
 ### Preface
-The installation requires an already working MacPorts or Homebrew installation on your Mac, please follow the corresponding instrutions on https://www.macports.org/install.php or https://brew.sh\
+The installation requires an already working MacPorts or Homebrew installation on your Mac, please follow the corresponding instrutions on https://www.macports.org/install.php or https://brew.sh \ 
 The scripts run on Apple Silicon. It's not tested on Intel Macs.\
 I include two short instruction how to install MacPorts or Homebrew. Please install only one of them!
 
